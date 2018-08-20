@@ -16,7 +16,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static junit.framework.TestCase.assertTrue;
@@ -44,25 +47,34 @@ public class FilesKeggApplicationTests {
 					.sorted(Comparator.naturalOrder()).toArray();
 
 			String actualEC = "";
-			StringBuffer lines = new StringBuffer();
+			String lines = "";
 			for (int i = 0; i < files.length; i++) {
 				Path path = ((Path)files[i]);
 				String fileName = path.getFileName().toString();
 				if (!fileName.contains(".-.pep") && !fileName.contains("merged")){
+				    String fileECName = fileName.substring(fileName.indexOf("EC"), fileName.indexOf(".pep"));
 					if (actualEC == ""){
-						actualEC = fileName.substring(fileName.indexOf("EC"), fileName.indexOf(".pep"));
+						actualEC = fileECName;
 					}
 
-					if (actualEC != fileName){
+					if (!actualEC.equals(fileECName)){
 						//Cria o parsed do EC
 						createFile(pathToRead + "/" + actualEC + ".merged.txt", lines);
 						//Reinicia buffer
-						lines = new StringBuffer();
-					}
-					actualEC = fileName;
+						lines = "";
+						actualEC = fileECName;
+					}else{
+                        actualEC = fileECName;
+                    }
 
 					Stream<String> streamLines = Files.lines(path);
-					lines.append(streamLines);
+
+					String allLines = streamLines
+							.map(e -> e.toString())
+							.collect(Collectors.joining("\n"));
+
+					lines += allLines;
+
 				}
 			}
 			/*Files.list(Paths.get(pathToRead))
@@ -87,14 +99,14 @@ public class FilesKeggApplicationTests {
 
 	}
 
-	public static void createFile(String path, StringBuffer lines) {
+	public static void createFile(String path, String lines) {
 		try {
 			File file = new File(path);
 			if (!file.exists()) {
 				file.createNewFile();
 			} else {
 				FileOutputStream writer = new FileOutputStream(path);
-				writer.write(lines.toString().getBytes());
+				writer.write(lines.getBytes());
 				writer.close();
 			}
 		} catch (IOException e) {
